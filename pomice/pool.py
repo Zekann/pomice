@@ -706,6 +706,64 @@ class Node:
                 uri=spotify_results.uri,
             )
 
+        elif discord_url := URLRegex.DISCORD_MP3_URL.match(query):
+            data: dict = await self.send(
+                method="GET",
+                path="loadtracks",
+                query=f"identifier={quote(query)}",
+            )
+
+            track: dict = data["tracks"][0]
+            info: dict = track["info"]
+
+            return [
+                Track(
+                    track_id=track["track"],
+                    info={
+                        "title": discord_url.group("file"),
+                        "author": "Unknown",
+                        "length": info["length"],
+                        "uri": info["uri"],
+                        "position": info["position"],
+                        "identifier": info["identifier"],
+                    },
+                    ctx=ctx,
+                    track_type=TrackType.HTTP,
+                    filters=filters,
+                ),
+            ]
+
+        elif path.exists(path.dirname(query)):
+            local_file = Path(query)
+            data: dict = await self.send(  # type: ignore
+                method="GET",
+                path="loadtracks",
+                query=f"identifier={quote(query)}",
+            )
+
+            if self._version.major >= 4:
+                raise ("This feature is not available in Lavalink v4 acctualy, Contact Zekann for more information.")
+            else:
+                track: dict = data["tracks"][0]  # type: ignore
+                info: dict = track["info"]  # type: ignore
+
+            return [
+                Track(
+                    track_id=track["track"],
+                    info={
+                        "title": local_file.name,
+                        "author": "Unknown",
+                        "length": info["length"],
+                        "uri": quote(local_file.as_uri()),
+                        "position": info["position"],
+                        "identifier": info["identifier"],
+                    },
+                    ctx=ctx,
+                    track_type=TrackType.LOCAL,
+                    filters=filters,
+                ),
+            ]
+
         else:
             if not URLRegex.BASE_URL.match(query) and not re.match(r"(?:ytm?|sc)search:.", query):
                 query = f"{search_type}:{query}"
