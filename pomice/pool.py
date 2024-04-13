@@ -784,6 +784,7 @@ class Node:
         # Lavalink v4 changed the name of the key from "tracks" to "data"
         # so lets account for that
         data_type = "data" if self._version.major >= 4 else "tracks"
+        exception_type = "data" if self._version.major >= 4 else "exception"
 
         if not load_type:
             raise TrackLoadError(
@@ -791,7 +792,7 @@ class Node:
             )
 
         elif load_type in ("LOAD_FAILED", "error"):
-            exception = data["data"] if self._version.major >= 4 else data["exception"]
+            exception = data[exception_type] if self._version.major >= 4 else data["exception"]
             raise TrackLoadError(
                 f"{exception['message']} [{exception['severity']}]",
             )
